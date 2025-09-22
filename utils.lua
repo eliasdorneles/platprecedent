@@ -2,6 +2,16 @@
 --- Here is a collection of generic functions that complete the standard
 --- library for my use
 
+function str_endswith(str, suffix)
+    local cut = string.sub(str, 1 + #str - #suffix, #str)
+    return cut == suffix
+end
+
+function str_startswith(str, prefix)
+    local cut = string.sub(str, 1,  #prefix)
+    return cut == prefix
+end
+
 function uniform(a, b)
     return a + (b - a) * math.random()
 end
