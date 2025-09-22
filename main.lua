@@ -2,6 +2,7 @@ require("utils")
 local vector = require("vendor/hump/vector")
 local Timer = require("vendor/hump/timer")
 local Camera = require("vendor/hump/camera")
+local sti = require("vendor/sti")
 local colors = require("colors")
 local sprite = require("sprite")
 local Rect = require("rect")
@@ -112,6 +113,7 @@ local Images = {}
 local gameOver = false
 local score = 0
 local camera
+local gameMap
 
 
 function love.load()
@@ -123,6 +125,8 @@ function love.load()
 
     Images.big_font = love.graphics.newFont("images/04B_11.ttf", 60)
     Images.medium_font = love.graphics.newFont("images/04B_11.ttf", 20)
+
+    gameMap = sti('maps/map.lua')
 
     local playerStates = {
         "dead",
@@ -205,9 +209,11 @@ function love.draw()
         return
     end
 
+
     camera:attach()
-    love.graphics.rectangle("fill", 0, 0, 400, 5)
-    love.graphics.rectangle("fill", 500, 500, 400, 5)
+    gameMap:drawLayer(gameMap.layers["Tiles"])
+    gameMap:drawLayer(gameMap.layers["Decoration"])
+    gameMap:drawLayer(gameMap.layers["Objects"])
 
     allSprites:draw()
     camera:detach()
