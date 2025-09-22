@@ -1,3 +1,4 @@
 game.love
 /game-web-build
 /tmp
+*.tiled-session
