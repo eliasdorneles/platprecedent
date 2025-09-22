@@ -71,6 +71,8 @@ end
 
 function Player:move(dt)
     self.rect.pos = self.rect.pos + self.direction * self.speed * dt
+    self.rect.pos.x = max { 0, self.rect.pos.x }
+    self.rect.pos.y = max { 0, self.rect.pos.y }
     self:update_hitbox()
 end
 
@@ -114,6 +116,7 @@ local gameOver = false
 local score = 0
 local camera
 local gameMap
+local gameMapRect
 
 
 function love.load()
@@ -127,6 +130,7 @@ function love.load()
     Images.medium_font = love.graphics.newFont("images/04B_11.ttf", 20)
 
     gameMap = sti('maps/map.lua')
+    gameMapRect = Rect:new(0, 0, gameMap.width * gameMap.tilewidth, gameMap.height * gameMap.tileheight)
 
     local playerStates = {
         "dead",
@@ -190,6 +194,10 @@ function love.update(dt)
     handleCollisions()
 
     camera:lookAt(player.rect:getCenterX(), player.rect:getCenterY())
+    camera.x = max{WIN_WIDTH / 2, camera.x}
+    camera.y = max{WIN_HEIGHT / 2, camera.y}
+    camera.x = min{gameMapRect.width - WIN_WIDTH / 2, camera.x}
+    camera.y = min{gameMapRect.height - WIN_HEIGHT / 2, camera.y}
 end
 
 function love.draw()
