@@ -23,40 +23,43 @@ Player = {}
 function Player:new()
     self.__index = self
     return setmetatable({
-        speed = 200,
+        speed = 300,
         direction = vector(),
         animation_speed = 10,
     }, self)
 end
 
-function Player:init(images)
+function Player:init(images, world)
     self.images = images
     self.state = "idle"
     self.facing = "right"
     self.image = self.images["walk1"]
     self.rect = Rect.fromImage(self.image)
     self:resetInitialPos()
-    self.hitbox_rect = self.rect:inflated(-10, -25)
-    self:update_hitbox()
     self.frame_index = 1
+    self.body = love.physics.newBody(world, self.rect.pos.x, self.rect.pos.y, "dynamic")
+    local hitbox_width, hitbox_height = self.rect.width * 0.8, self.rect.height * 0.8
+    self.shape = love.physics.newRectangleShape(hitbox_width, hitbox_height)
+    self.fixture = love.physics.newFixture(self.body, self.shape)
+    self.body:setFixedRotation(true)
+    self.fixture:setUserData(self)
+    self.direction = vector()
 end
 
 function Player:resetInitialPos()
     self.rect.pos = vector(WIN_WIDTH / 2 - self.image:getWidth() / 2, WIN_HEIGHT - 200)
 end
 
-function Player:update_hitbox()
-    self.hitbox_rect:setCenter(self.rect:getCenter())
-    self.hitbox_rect.pos.y = self.hitbox_rect.pos.y + 15
+function Player:isOnFloor()
+    -- TODO: how to check player is on floor reliably?
+    local _, dy = self.body:getLinearVelocity()
+    return dy == 0
 end
 
 function Player:input()
     self.direction = vector()
-    if love.keyboard.isDown("down") then
-        self.direction.y = 1
-    end
-    if love.keyboard.isDown("up") then
-        self.direction.y = -1
+    if love.keyboard.isDown("up") and self:isOnFloor() then
+        self.direction.y = -1.5
     end
     if love.keyboard.isDown("left") then
         self.direction.x = -1
@@ -66,14 +69,14 @@ function Player:input()
         self.direction.x = 1
         self.facing = "right"
     end
-    self.direction:normalizeInplace()
 end
 
-function Player:move(dt)
-    self.rect.pos = self.rect.pos + self.direction * self.speed * dt
-    self.rect.pos.x = max { 0, self.rect.pos.x }
-    self.rect.pos.y = max { 0, self.rect.pos.y }
-    self:update_hitbox()
+function Player:move()
+    local _, dy = self.body:getLinearVelocity()
+    local dx = 0
+    local delta = vector(dx, dy) + self.direction * self.speed
+    self.body:setLinearVelocity(delta.x, delta.y)
+    self.rect:setCenter(vector(self.body:getPosition()))
 end
 
 function Player:animate(dt)
@@ -94,7 +97,7 @@ end
 
 function Player:update(dt)
     self:input()
-    self:move(dt)
+    self:move()
     self:animate(dt)
 end
 
@@ -117,6 +120,10 @@ local score = 0
 local camera
 local gameMap
 local gameMapRect
+local world
+local walls = {}
+local debugMode = false
+local timebomb
 
 
 function love.load()
@@ -125,6 +132,9 @@ function love.load()
 
     love.window.setTitle("Plat Précedent")
     WIN_WIDTH, WIN_HEIGHT = love.graphics.getDimensions()
+
+    local gravity = 9.81 * 100
+    world = love.physics.newWorld(0, gravity)
 
     Images.big_font = love.graphics.newFont("images/04B_11.ttf", 60)
     Images.medium_font = love.graphics.newFont("images/04B_11.ttf", 20)
@@ -158,12 +168,33 @@ function love.load()
         Images.playerImages[state] = love.graphics.newImage(imgPath)
     end
 
-    player:init(Images.playerImages)
+    for _, obj in ipairs(gameMap.layers["Collisions"].objects) do
+        local wall = {}
+        wall.body = love.physics.newBody(world, obj.x, obj.y, "static")
+        wall.shape = love.physics.newRectangleShape(obj.width / 2, obj.height / 2, obj.width, obj.height)
+        wall.fixture = love.physics.newFixture(wall.body, wall.shape)
+        table.insert(walls, wall)
+    end
+
+    player:init(Images.playerImages, world)
     allSprites:add("player", player)
     camera = Camera()
+    timebomb = 10
+    Timer.every(1, function()
+        timebomb = timebomb - 1
+    end)
+    Timer.after(10, function()
+        gameOver = true
+    end)
 end
 
 local function handleGlobalEvents()
+end
+
+function love.keyreleased(key)
+    if key == "f8" then
+        debugMode = not debugMode
+    end
 end
 
 local function handleGameOverEvents()
@@ -181,6 +212,8 @@ local function handleCollisions()
 end
 
 function love.update(dt)
+    world:update(dt)
+
     if gameOver then
         handleGameOverEvents()
         return
@@ -194,10 +227,22 @@ function love.update(dt)
     handleCollisions()
 
     camera:lookAt(player.rect:getCenterX(), player.rect:getCenterY())
-    camera.x = max{WIN_WIDTH / 2, camera.x}
-    camera.y = max{WIN_HEIGHT / 2, camera.y}
-    camera.x = min{gameMapRect.width - WIN_WIDTH / 2, camera.x}
-    camera.y = min{gameMapRect.height - WIN_HEIGHT / 2, camera.y}
+    camera.x = max { WIN_WIDTH / 2, camera.x }
+    camera.y = max { WIN_HEIGHT / 2, camera.y }
+    camera.x = min { gameMapRect.width - WIN_WIDTH / 2, camera.x }
+    camera.y = min { gameMapRect.height - WIN_HEIGHT / 2, camera.y }
+end
+
+local function debugDraw(fixture)
+    local shape = fixture:getShape()
+    local body = fixture:getBody()
+    local points = { shape:getPoints() }
+    local transformedPoints = {}
+    for i = 1, #points, 2 do
+        table.insert(transformedPoints, points[i] + body:getX())
+        table.insert(transformedPoints, points[i + 1] + body:getY())
+    end
+    love.graphics.polygon("line", transformedPoints)
 end
 
 function love.draw()
@@ -217,14 +262,24 @@ function love.draw()
         return
     end
 
-
     camera:attach()
-    gameMap:drawLayer(gameMap.layers["Tiles"])
+
+    gameMap:drawLayer(gameMap.layers["Platforms"])
     gameMap:drawLayer(gameMap.layers["Decoration"])
     gameMap:drawLayer(gameMap.layers["Objects"])
 
     allSprites:draw()
+
+    if debugMode then
+        withColor("white", function()
+            debugDraw(player.fixture)
+            for _, wall in ipairs(walls) do
+                debugDraw(wall.fixture)
+            end
+        end)
+    end
     camera:detach()
 
-    love.graphics.printf(string.format("Score: %d", score), -10, 10, WIN_WIDTH, "right")
+    -- love.graphics.printf(string.format("Score: %d", score), -10, 10, WIN_WIDTH, "right")
+    love.graphics.printf(string.format("Time left: %d", timebomb), -10, 10, WIN_WIDTH, "right")
 end
