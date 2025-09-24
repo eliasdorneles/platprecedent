@@ -18,6 +18,27 @@ local function withColor(color, func, ...)
     love.graphics.setColor(old_r, old_g, old_b, old_a)
 end
 
+
+Diamond = {}
+
+function Diamond:new(pos, color)
+    self.__index = self
+    return setmetatable({
+        -- image = image,
+        -- rect = Rect.fromImage(image, pos),
+        rect = Rect:new(pos.x, pos.y, 30, 30),
+        color = color,
+    }, self)
+end
+
+function Diamond:update(dt) end
+
+function Diamond:draw()
+    withColor(self.color, function()
+        love.graphics.rectangle("fill", self.rect.pos.x, self.rect.pos.y, self.rect.width, self.rect.height)
+    end)
+end
+
 Player = {}
 
 function Player:new()
@@ -35,7 +56,7 @@ function Player:init(images, world, initialPos)
     self.facing = "right"
     self.image = self.images["walk1"]
     self.rect = Rect.fromImage(self.image)
-    self.initialPosition = vector(WIN_WIDTH / 2 - self.image:getWidth() / 2, WIN_HEIGHT - 200)
+    self.initialPosition = initialPos
     self.frame_index = 1
     self.body = love.physics.newBody(world, self.initialPosition.x, self.initialPosition.y, "dynamic")
     local hitbox_width, hitbox_height = self.rect.width * 0.8, self.rect.height * 0.8
@@ -193,6 +214,9 @@ function love.load()
     for _, obj in ipairs(gameMap.layers["Entities"].objects) do
         if obj.name == "Player" then
             playerInitialPos.x, playerInitialPos.y = obj.x, obj.y
+        elseif obj.name == "Diamond" then
+            local diam = Diamond:new(vector(obj.x, obj.y), obj.type)
+            allSprites:add("diamonds", diam)
         end
     end
 
@@ -262,20 +286,24 @@ local function debugDraw(fixture)
     love.graphics.polygon("line", transformedPoints)
 end
 
+local function displayGameOverScreen()
+    withColor("antiquewhite", function()
+        love.graphics.printf(
+            "GAME OVER", Images.big_font, 0, WIN_HEIGHT / 2 - 100, WIN_WIDTH, "center")
+        love.graphics.printf(
+            string.format("Your score: %d", score), Images.medium_font, 0, WIN_HEIGHT / 2, WIN_WIDTH, "center")
+        love.graphics.printf(
+            "Press ENTER to play again", Images.medium_font, 0, WIN_HEIGHT / 2 + 50, WIN_WIDTH, "center")
+    end)
+end
+
 function love.draw()
     withColor("darkslategrey", function()
         love.graphics.rectangle("fill", 0, 0, WIN_WIDTH, WIN_HEIGHT)
     end)
 
     if gameOver then
-        withColor("antiquewhite", function()
-            love.graphics.printf(
-                "GAME OVER", Images.big_font, 0, WIN_HEIGHT / 2 - 100, WIN_WIDTH, "center")
-            love.graphics.printf(
-                string.format("Your score: %d", score), Images.medium_font, 0, WIN_HEIGHT / 2, WIN_WIDTH, "center")
-            love.graphics.printf(
-                "Press ENTER to play again", Images.medium_font, 0, WIN_HEIGHT / 2 + 50, WIN_WIDTH, "center")
-        end)
+        displayGameOverScreen()
         return
     end
 
