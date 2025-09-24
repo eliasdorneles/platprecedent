@@ -29,25 +29,27 @@ function Player:new()
     }, self)
 end
 
-function Player:init(images, world)
+function Player:init(images, world, initialPos)
     self.images = images
     self.state = "idle"
     self.facing = "right"
     self.image = self.images["walk1"]
     self.rect = Rect.fromImage(self.image)
-    self:resetInitialPos()
+    self.initialPosition = vector(WIN_WIDTH / 2 - self.image:getWidth() / 2, WIN_HEIGHT - 200)
     self.frame_index = 1
-    self.body = love.physics.newBody(world, self.rect.pos.x, self.rect.pos.y, "dynamic")
+    self.body = love.physics.newBody(world, self.initialPosition.x, self.initialPosition.y, "dynamic")
     local hitbox_width, hitbox_height = self.rect.width * 0.8, self.rect.height * 0.8
     self.shape = love.physics.newRectangleShape(hitbox_width, hitbox_height)
     self.fixture = love.physics.newFixture(self.body, self.shape)
     self.body:setFixedRotation(true)
     self.fixture:setUserData(self)
     self.direction = vector()
+    self:resetInitialPos()
 end
 
 function Player:resetInitialPos()
-    self.rect.pos = vector(WIN_WIDTH / 2 - self.image:getWidth() / 2, WIN_HEIGHT - 200)
+    self.body:setPosition(self.initialPosition.x, self.initialPosition.y)
+    self.rect:setCenter(vector(self.body:getPosition()))
 end
 
 function Player:isOnFloor()
@@ -123,8 +125,19 @@ local gameMapRect
 local world
 local walls = {}
 local debugMode = false
+local levelTimer = Timer:new()
 local timebomb
 
+local function startLevelTimer(timeout)
+    timebomb = timeout
+    levelTimer:clear()
+    levelTimer:after(timebomb, function()
+        gameOver = true
+    end)
+    levelTimer:every(1, function()
+        timebomb = timebomb - 1
+    end)
+end
 
 function love.load()
     print('starting platformer...')
@@ -176,19 +189,17 @@ function love.load()
         table.insert(walls, wall)
     end
 
-    player:init(Images.playerImages, world)
+    local playerInitialPos = vector(0, 0)
+    for _, obj in ipairs(gameMap.layers["Entities"].objects) do
+        if obj.name == "Player" then
+            playerInitialPos.x, playerInitialPos.y = obj.x, obj.y
+        end
+    end
+
+    player:init(Images.playerImages, world, playerInitialPos)
     allSprites:add("player", player)
     camera = Camera()
-    timebomb = 10
-    Timer.every(1, function()
-        timebomb = timebomb - 1
-    end)
-    Timer.after(10, function()
-        gameOver = true
-    end)
-end
-
-local function handleGlobalEvents()
+    startLevelTimer(300)
 end
 
 function love.keyreleased(key)
@@ -205,32 +216,38 @@ local function handleGameOverEvents()
 
         player:resetInitialPos()
         gameOver = false
+        startLevelTimer(300)
     end
 end
 
-local function handleCollisions()
-end
-
-function love.update(dt)
-    world:update(dt)
-
-    if gameOver then
-        handleGameOverEvents()
-        return
-    end
-    Timer.update(dt)
-
-    handleGlobalEvents()
-
-    allSprites:update(dt)
-
-    handleCollisions()
-
+local function cameraFollowPlayer()
+    -- here we make the camera follow the player, except at the borders of the map rectangle
     camera:lookAt(player.rect:getCenterX(), player.rect:getCenterY())
     camera.x = max { WIN_WIDTH / 2, camera.x }
     camera.y = max { WIN_HEIGHT / 2, camera.y }
     camera.x = min { gameMapRect.width - WIN_WIDTH / 2, camera.x }
     camera.y = min { gameMapRect.height - WIN_HEIGHT / 2, camera.y }
+end
+
+local function handleGlobalEvents()
+    if player.rect:getTop() > gameMapRect:getBottom() then
+        gameOver = true
+    end
+end
+
+function love.update(dt)
+    if gameOver then
+        handleGameOverEvents()
+        return
+    end
+    world:update(dt)
+    Timer.update(dt)
+    levelTimer:update(dt)
+
+    handleGlobalEvents()
+
+    allSprites:update(dt)
+    cameraFollowPlayer()
 end
 
 local function debugDraw(fixture)
@@ -266,7 +283,6 @@ function love.draw()
 
     gameMap:drawLayer(gameMap.layers["Platforms"])
     gameMap:drawLayer(gameMap.layers["Decoration"])
-    gameMap:drawLayer(gameMap.layers["Objects"])
 
     allSprites:draw()
 
