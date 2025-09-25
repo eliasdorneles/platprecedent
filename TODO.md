@@ -2,7 +2,7 @@
 [x] game over when player falls from all platforms
 [x] adjust platform distances according to jump ability
 [x] display diamond rects from map positions
-[ ] display diamond images loading from spritesheet using quads
+[x] display diamond images loading from spritesheet using quads
 [ ] let player collect diamonds, diamonds win points
     Y: 5 points
     G: 10 points

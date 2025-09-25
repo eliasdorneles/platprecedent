@@ -11,6 +11,15 @@ function Rect:new(x, y, width, height)
     }, self)
 end
 
+function Rect.build(spec)
+    -- TODO: validate arguments
+    local rect = Rect:new(spec.x or 0, spec.y or 0, spec.width or 0, spec.height or 0)
+    if spec.center then
+        rect:setCenter(spec.center)
+    end
+    return rect
+end
+
 function Rect:getTop()
     return self.pos.y
 end

@@ -21,12 +21,12 @@ end
 
 Diamond = {}
 
-function Diamond:new(pos, color)
+function Diamond:new(image, quad, pos, color)
     self.__index = self
     return setmetatable({
-        -- image = image,
-        -- rect = Rect.fromImage(image, pos),
-        rect = Rect:new(pos.x, pos.y, 30, 30),
+        image = image,
+        quad = quad,
+        rect = Rect.build { center = pos, width = 64, height = 64 },
         color = color,
     }, self)
 end
@@ -34,9 +34,7 @@ end
 function Diamond:update(dt) end
 
 function Diamond:draw()
-    withColor(self.color, function()
-        love.graphics.rectangle("fill", self.rect.pos.x, self.rect.pos.y, self.rect.width, self.rect.height)
-    end)
+    love.graphics.draw(self.image, self.quad, self.rect.pos.x, self.rect.pos.y)
 end
 
 Player = {}
@@ -144,7 +142,7 @@ local camera
 local gameMap
 local gameMapRect
 local world
-local walls = {}
+local collisionWalls = {}
 local debugMode = false
 local levelTimer = Timer:new()
 local timebomb
@@ -172,6 +170,15 @@ function love.load()
 
     Images.big_font = love.graphics.newFont("images/04B_11.ttf", 60)
     Images.medium_font = love.graphics.newFont("images/04B_11.ttf", 20)
+
+    Images.tilesheet = love.graphics.newImage("images/tilesheet_complete.png")
+
+    Images.diamonds = {}
+    Images.diamonds["empty"] = love.graphics.newQuad(64 * 12, 0, 64, 64, Images.tilesheet)
+    Images.diamonds["blue"] = love.graphics.newQuad(64 * 13, 0, 64, 64, Images.tilesheet)
+    Images.diamonds["yellow"] = love.graphics.newQuad(64 * 14, 0, 64, 64, Images.tilesheet)
+    Images.diamonds["red"] = love.graphics.newQuad(64 * 15, 0, 64, 64, Images.tilesheet)
+    Images.diamonds["green"] = love.graphics.newQuad(64 * 16, 0, 64, 64, Images.tilesheet)
 
     gameMap = sti('maps/map.lua')
     gameMapRect = Rect:new(0, 0, gameMap.width * gameMap.tilewidth, gameMap.height * gameMap.tileheight)
@@ -207,7 +214,7 @@ function love.load()
         wall.body = love.physics.newBody(world, obj.x, obj.y, "static")
         wall.shape = love.physics.newRectangleShape(obj.width / 2, obj.height / 2, obj.width, obj.height)
         wall.fixture = love.physics.newFixture(wall.body, wall.shape)
-        table.insert(walls, wall)
+        table.insert(collisionWalls, wall)
     end
 
     local playerInitialPos = vector(0, 0)
@@ -215,7 +222,12 @@ function love.load()
         if obj.name == "Player" then
             playerInitialPos.x, playerInitialPos.y = obj.x, obj.y
         elseif obj.name == "Diamond" then
-            local diam = Diamond:new(vector(obj.x, obj.y), obj.type)
+            local diam = Diamond:new(
+                Images.tilesheet,
+                Images.diamonds[obj.type],
+                vector(obj.x, obj.y),
+                obj.type
+            )
             allSprites:add("diamonds", diam)
         end
     end
@@ -317,7 +329,7 @@ function love.draw()
     if debugMode then
         withColor("white", function()
             debugDraw(player.fixture)
-            for _, wall in ipairs(walls) do
+            for _, wall in ipairs(collisionWalls) do
                 debugDraw(wall.fixture)
             end
         end)
