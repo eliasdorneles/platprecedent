@@ -164,14 +164,26 @@ local debugMode = false
 local levelTimer = Timer:new()
 local timebomb
 
+
 local function beginContact(a, b, contact)
     local obj1, obj2 = a:getUserData(), b:getUserData()
-    if obj1 and obj2 then
-        if obj1.tag == "player" and obj2.tag == "diamond" or obj1.tag == "diamond" and obj2.tag == "player" then
-            if obj1.tag == "diamond" then obj1.is_dead = true end
-            if obj2.tag == "diamond" then obj2.is_dead = true end
-            score = score + 5
+
+    local function getTaggedCollision(tag1, tag2)
+        if obj1 and obj2 and obj1.tag and obj2.tag then
+            if obj1.tag == tag1 and obj2.tag == tag2 then
+                return obj1, obj2
+            end
+            if obj1.tag == tag2 and obj2.tag == tag1 then
+                return obj2, obj1
+            end
         end
+        return nil, nil
+    end
+
+    local player, diamond = getTaggedCollision("player", "diamond")
+    if player and diamond then
+        diamond.is_dead = true
+        score = score + 5
     end
 end
 
