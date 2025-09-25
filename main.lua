@@ -4,7 +4,7 @@ local Timer = require("vendor/hump/timer")
 local Camera = require("vendor/hump/camera")
 local sti = require("vendor/sti")
 local colors = require("colors")
-local sprite = require("sprite")
+local Sprite = require("sprite")
 local Rect = require("rect")
 
 -- uncomment the lines below to allow hot-reloading
@@ -21,14 +21,26 @@ end
 
 Diamond = {}
 
-function Diamond:new(image, quad, pos, color)
+function Diamond:new(image, quad, pos, color, world)
     self.__index = self
-    return setmetatable({
+    local rect = Rect.build { center = pos, width = 64, height = 64 }
+    local hitbox_width, hitbox_height = rect.width * 0.3, rect.height * 0.3
+
+    local this = setmetatable({
         image = image,
         quad = quad,
-        rect = Rect.build { center = pos, width = 64, height = 64 },
+        rect = rect,
         color = color,
+        body = love.physics.newBody(world, pos.x, pos.y, "static"),
+        shape = love.physics.newRectangleShape(hitbox_width, hitbox_height),
+        tag = "diamond",
     }, self)
+
+    this.fixture = love.physics.newFixture(this.body, this.shape)
+    this.fixture:setUserData(this)
+    this.fixture:setSensor(true)
+
+    return this
 end
 
 function Diamond:update(dt) end
@@ -45,6 +57,7 @@ function Player:new()
         speed = 300,
         direction = vector(),
         animation_speed = 10,
+        tag = "player",
     }, self)
 end
 
@@ -60,6 +73,7 @@ function Player:init(images, world, initialPos)
     local hitbox_width, hitbox_height = self.rect.width * 0.8, self.rect.height * 0.8
     self.shape = love.physics.newRectangleShape(hitbox_width, hitbox_height)
     self.fixture = love.physics.newFixture(self.body, self.shape)
+    self.fixture:setUserData(self)
     self.body:setFixedRotation(true)
     self.fixture:setUserData(self)
     self.direction = vector()
@@ -133,7 +147,10 @@ function Player:draw()
     love.graphics.draw(self.image, self.rect.pos.x, self.rect.pos.y, r, sx, sy, ox, oy, kx, ky)
 end
 
-local allSprites = sprite.Registry:new()
+local function endContact(a, b, contact)
+end
+
+local allSprites = Sprite.Registry:new()
 local player = Player:new()
 local Images = {}
 local gameOver = false
@@ -146,6 +163,17 @@ local collisionWalls = {}
 local debugMode = false
 local levelTimer = Timer:new()
 local timebomb
+
+local function beginContact(a, b, contact)
+    local obj1, obj2 = a:getUserData(), b:getUserData()
+    if obj1 and obj2 then
+        if obj1.tag == "player" and obj2.tag == "diamond" or obj1.tag == "diamond" and obj2.tag == "player" then
+            if obj1.tag == "diamond" then obj1.is_dead = true end
+            if obj2.tag == "diamond" then obj2.is_dead = true end
+            score = score + 5
+        end
+    end
+end
 
 local function startLevelTimer(timeout)
     timebomb = timeout
@@ -167,6 +195,8 @@ function love.load()
 
     local gravity = 9.81 * 100
     world = love.physics.newWorld(0, gravity)
+
+    world:setCallbacks(beginContact, endContact)
 
     Images.big_font = love.graphics.newFont("images/04B_11.ttf", 60)
     Images.medium_font = love.graphics.newFont("images/04B_11.ttf", 20)
@@ -226,7 +256,8 @@ function love.load()
                 Images.tilesheet,
                 Images.diamonds[obj.type],
                 vector(obj.x, obj.y),
-                obj.type
+                obj.type,
+                world
             )
             allSprites:add("diamonds", diam)
         end
@@ -328,7 +359,11 @@ function love.draw()
 
     if debugMode then
         withColor("white", function()
-            debugDraw(player.fixture)
+            for _, sprite in allSprites:iteritems() do
+                if sprite.fixture then
+                    debugDraw(sprite.fixture)
+                end
+            end
             for _, wall in ipairs(collisionWalls) do
                 debugDraw(wall.fixture)
             end
@@ -336,6 +371,6 @@ function love.draw()
     end
     camera:detach()
 
-    -- love.graphics.printf(string.format("Score: %d", score), -10, 10, WIN_WIDTH, "right")
+    love.graphics.printf(string.format("Score: %d", score), -10, 30, WIN_WIDTH, "right")
     love.graphics.printf(string.format("Time left: %d", timebomb), -10, 10, WIN_WIDTH, "right")
 end

@@ -3,7 +3,8 @@
 [x] adjust platform distances according to jump ability
 [x] display diamond rects from map positions
 [x] display diamond images loading from spritesheet using quads
-[ ] let player collect diamonds, diamonds win points
+[x] let player collect diamonds, diamonds win score points
+[ ] count point values depending on diamond color
     Y: 5 points
     G: 10 points
     B: 20 points
