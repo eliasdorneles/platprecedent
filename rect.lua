@@ -17,6 +17,9 @@ function Rect.build(spec)
     if spec.center then
         rect:setCenter(spec.center)
     end
+    if spec.topleft then
+        rect:setTopLeft(spec.topleft)
+    end
     return rect
 end
 

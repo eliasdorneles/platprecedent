@@ -10,7 +10,7 @@ return {
   tilewidth = 64,
   tileheight = 64,
   nextlayerid = 9,
-  nextobjectid = 42,
+  nextobjectid = 45,
   properties = {},
   tilesets = {
     {
@@ -146,7 +146,7 @@ return {
         {
           id = 27,
           name = "Diamond",
-          type = "yellow",
+          type = "red",
           shape = "point",
           x = 244,
           y = 456,
@@ -159,7 +159,7 @@ return {
         {
           id = 28,
           name = "Diamond",
-          type = "yellow",
+          type = "red",
           shape = "point",
           x = 510,
           y = 654,
@@ -172,7 +172,7 @@ return {
         {
           id = 29,
           name = "Diamond",
-          type = "yellow",
+          type = "red",
           shape = "point",
           x = 1086,
           y = 476,
@@ -198,7 +198,7 @@ return {
         {
           id = 31,
           name = "Diamond",
-          type = "yellow",
+          type = "red",
           shape = "point",
           x = 1313.33,
           y = 223.333,
@@ -211,7 +211,7 @@ return {
         {
           id = 32,
           name = "Diamond",
-          type = "yellow",
+          type = "red",
           shape = "point",
           x = 1371.33,
           y = 225.333,
@@ -224,7 +224,7 @@ return {
         {
           id = 33,
           name = "Diamond",
-          type = "yellow",
+          type = "red",
           shape = "point",
           x = 1692,
           y = 220,
@@ -237,7 +237,7 @@ return {
         {
           id = 34,
           name = "Diamond",
-          type = "yellow",
+          type = "red",
           shape = "point",
           x = 618,
           y = 384,
@@ -250,7 +250,7 @@ return {
         {
           id = 38,
           name = "Diamond",
-          type = "yellow",
+          type = "red",
           shape = "point",
           x = 1279.5,
           y = 640.75,
@@ -263,7 +263,7 @@ return {
         {
           id = 39,
           name = "Diamond",
-          type = "yellow",
+          type = "red",
           shape = "point",
           x = 1312,
           y = 640,
@@ -276,7 +276,7 @@ return {
         {
           id = 40,
           name = "Diamond",
-          type = "yellow",
+          type = "red",
           shape = "point",
           x = 1344,
           y = 640.25,
@@ -289,12 +289,25 @@ return {
         {
           id = 41,
           name = "Flag",
-          type = "",
+          type = "red",
           shape = "point",
-          x = 1828,
-          y = 253.833,
+          x = 1827,
+          y = 256,
           width = 0,
           height = 0,
+          rotation = 0,
+          visible = true,
+          properties = {}
+        },
+        {
+          id = 44,
+          name = "Goal",
+          type = "",
+          shape = "rectangle",
+          x = 1856,
+          y = 64,
+          width = 364,
+          height = 256.667,
           rotation = 0,
           visible = true,
           properties = {}

@@ -19,6 +19,29 @@ local function withColor(color, func, ...)
 end
 
 
+LevelFlag = {}
+
+function LevelFlag:new(image, quad, pos, color)
+    self.__index = self
+    local rect = Rect.build { topleft = pos, width = 64, height = 64 }
+
+    local this = setmetatable({
+        image = image,
+        quad = quad,
+        rect = rect,
+        color = color,
+        tag = "flag",
+    }, self)
+
+    return this
+end
+
+function LevelFlag:update(dt) end
+
+function LevelFlag:draw()
+    love.graphics.draw(self.image, self.quad, self.rect.pos.x, self.rect.pos.y)
+end
+
 Diamond = {}
 
 function Diamond:new(image, quad, pos, color, world)
@@ -48,6 +71,28 @@ function Diamond:update(dt) end
 function Diamond:draw()
     love.graphics.draw(self.image, self.quad, self.rect.pos.x, self.rect.pos.y)
 end
+
+InvisibleCollider = {}
+
+function InvisibleCollider:new(pos, width, height, world, tag)
+    self.__index = self
+
+    local this = setmetatable({
+        body = love.physics.newBody(world, pos.x, pos.y, "static"),
+        shape = love.physics.newRectangleShape(width, height),
+        tag = tag,
+    }, self)
+
+    this.fixture = love.physics.newFixture(this.body, this.shape)
+    this.fixture:setUserData(this)
+    this.fixture:setSensor(true)
+
+    return this
+end
+
+function InvisibleCollider:update(dt) end
+
+function InvisibleCollider:draw() end
 
 Player = {}
 
@@ -147,13 +192,11 @@ function Player:draw()
     love.graphics.draw(self.image, self.rect.pos.x, self.rect.pos.y, r, sx, sy, ox, oy, kx, ky)
 end
 
-local function endContact(a, b, contact)
-end
-
 local allSprites = Sprite.Registry:new()
 local player = Player:new()
 local Images = {}
 local gameOver = false
+local gameWon = false
 local score = 0
 local camera
 local gameMap
@@ -163,7 +206,7 @@ local collisionWalls = {}
 local debugMode = false
 local levelTimer = Timer:new()
 local timebomb
-local bgcolor = "darkslategrey"
+local bgcolor = "darkslategrey" -- default bg color, if not defined in map
 
 
 local function beginContact(a, b, contact)
@@ -172,29 +215,34 @@ local function beginContact(a, b, contact)
     local function getTaggedCollision(tag1, tag2)
         if obj1 and obj2 and obj1.tag and obj2.tag then
             if obj1.tag == tag1 and obj2.tag == tag2 then
-                return obj1, obj2
+                local ret = {}
+                ret[obj1.tag] = obj1
+                ret[obj2.tag] = obj2
+                return ret
             end
             if obj1.tag == tag2 and obj2.tag == tag1 then
-                return obj2, obj1
+                local ret = {}
+                ret[obj1.tag] = obj1
+                ret[obj2.tag] = obj2
+                return ret
             end
         end
-        return nil, nil
+        return nil
     end
 
-    local player, diamond = getTaggedCollision("player", "diamond")
-    if player and diamond then
-        diamond.is_dead = true
-        if diamond.color == "yellow" then
-            score = score + 5
-        elseif diamond.color == "green" then
-            score = score + 10
-        elseif diamond.color == "blue" then
-            score = score + 25
-        else
-            print("error: diamond with invalid color:", diamond.color)
-        end
+    local collision = getTaggedCollision("player", "diamond")
+    if collision then
+        collision.diamond.is_dead = true
+        score = score + 5
+    end
+
+    if getTaggedCollision("player", "goal") then
+        score = score + 100
+        gameWon = true
     end
 end
+
+local function endContact(a, b, contact) end
 
 local function startLevelTimer(timeout)
     timebomb = timeout
@@ -225,11 +273,14 @@ function love.load()
     Images.tilesheet = love.graphics.newImage("images/tilesheet_complete.png")
 
     Images.diamonds = {}
-    Images.diamonds["empty"] = love.graphics.newQuad(64 * 12, 0, 64, 64, Images.tilesheet)
-    Images.diamonds["blue"] = love.graphics.newQuad(64 * 13, 0, 64, 64, Images.tilesheet)
-    Images.diamonds["yellow"] = love.graphics.newQuad(64 * 14, 0, 64, 64, Images.tilesheet)
-    Images.diamonds["red"] = love.graphics.newQuad(64 * 15, 0, 64, 64, Images.tilesheet)
-    Images.diamonds["green"] = love.graphics.newQuad(64 * 16, 0, 64, 64, Images.tilesheet)
+    Images.diamonds["empty"] = love.graphics.newQuad(64 * 12, 64, 64, 64, Images.tilesheet)
+    Images.diamonds["blue"] = love.graphics.newQuad(64 * 13, 64, 64, 64, Images.tilesheet)
+    Images.diamonds["yellow"] = love.graphics.newQuad(64 * 14, 64, 64, 64, Images.tilesheet)
+    Images.diamonds["red"] = love.graphics.newQuad(64 * 15, 64, 64, 64, Images.tilesheet)
+    Images.diamonds["green"] = love.graphics.newQuad(64 * 16, 64, 64, 64, Images.tilesheet)
+
+    Images.flags = {}
+    Images.flags["red"] = love.graphics.newQuad(64 * 14, 64 * 8, 64, 64, Images.tilesheet)
 
     gameMap = sti('maps/map.lua')
     gameMapRect = Rect:new(0, 0, gameMap.width * gameMap.tilewidth, gameMap.height * gameMap.tileheight)
@@ -272,17 +323,19 @@ function love.load()
 
     local playerInitialPos = vector(0, 0)
     for _, obj in ipairs(gameMap.layers["Entities"].objects) do
+        local objPos = vector(obj.x, obj.y)
         if obj.name == "Player" then
-            playerInitialPos.x, playerInitialPos.y = obj.x, obj.y
+            playerInitialPos = objPos
         elseif obj.name == "Diamond" then
-            local diam = Diamond:new(
-                Images.tilesheet,
-                Images.diamonds[obj.type],
-                vector(obj.x, obj.y),
-                obj.type,
-                world
-            )
+            local diam = Diamond:new(Images.tilesheet, Images.diamonds[obj.type], objPos, obj.type, world)
             allSprites:add("diamonds", diam)
+        elseif obj.name == "Flag" then
+            local sprite = LevelFlag:new(Images.tilesheet, Images.flags[obj.type], objPos, obj.type)
+            allSprites:add("flags", sprite)
+        elseif obj.name == "Goal" then
+            local pos = objPos + vector(obj.width / 2, obj.height / 2)
+            local sprite = InvisibleCollider:new(pos, obj.width, obj.height, world, "goal")
+            allSprites:add("goal", sprite)
         end
     end
 
@@ -299,13 +352,14 @@ function love.keyreleased(key)
 end
 
 local function handleGameOverEvents()
-    if love.keyboard.isDown("return") and gameOver then
+    if love.keyboard.isDown("return") and (gameOver or gameWon) then
         score = 0
 
         allSprites:cleanup()
 
         player:resetInitialPos()
         gameOver = false
+        gameWon = false
         startLevelTimer(300)
     end
 end
@@ -330,6 +384,11 @@ function love.update(dt)
         handleGameOverEvents()
         return
     end
+    if gameWon then
+        handleGameOverEvents()
+        return
+    end
+
     world:update(dt)
     Timer.update(dt)
     levelTimer:update(dt)
@@ -363,13 +422,33 @@ local function displayGameOverScreen()
     end)
 end
 
+local function displayGameWonScreen()
+    withColor("antiquewhite", function()
+        love.graphics.printf(
+            "YOU WON!", Images.big_font, 0, WIN_HEIGHT / 2 - 100, WIN_WIDTH, "center")
+        love.graphics.printf(
+            string.format("Your score: %d", score), Images.medium_font, 0, WIN_HEIGHT / 2, WIN_WIDTH, "center")
+        love.graphics.printf(
+            "Press ENTER to continue", Images.medium_font, 0, WIN_HEIGHT / 2 + 50, WIN_WIDTH, "center")
+    end)
+end
+
 function love.draw()
-    withColor(bgcolor, function()
+    local background = bgcolor
+    if gameOver then
+        background = "darkred"
+    end
+    withColor(background, function()
         love.graphics.rectangle("fill", 0, 0, WIN_WIDTH, WIN_HEIGHT)
     end)
 
     if gameOver then
         displayGameOverScreen()
+        return
+    end
+
+    if gameWon then
+        displayGameWonScreen()
         return
     end
 
