@@ -54,7 +54,6 @@ Player = {}
 function Player:new()
     self.__index = self
     return setmetatable({
-        speed = 300,
         direction = vector(),
         animation_speed = 10,
         tag = "player",
@@ -94,7 +93,7 @@ end
 function Player:input()
     self.direction = vector()
     if love.keyboard.isDown("up") and self:isOnFloor() then
-        self.direction.y = -1.5
+        self.direction.y = -1
     end
     if love.keyboard.isDown("left") then
         self.direction.x = -1
@@ -104,13 +103,14 @@ function Player:input()
         self.direction.x = 1
         self.facing = "right"
     end
+    self.direction:normalizeInplace()
 end
 
 function Player:move()
     local _, dy = self.body:getLinearVelocity()
-    local dx = 0
-    local delta = vector(dx, dy) + self.direction * self.speed
-    self.body:setLinearVelocity(delta.x, delta.y)
+    local dx = self.direction.x * 300
+    dy = dy + self.direction.y * 600
+    self.body:setLinearVelocity(dx, dy)
     self.rect:setCenter(vector(self.body:getPosition()))
 end
 
@@ -163,6 +163,7 @@ local collisionWalls = {}
 local debugMode = false
 local levelTimer = Timer:new()
 local timebomb
+local bgcolor = "darkslategrey"
 
 
 local function beginContact(a, b, contact)
@@ -183,7 +184,15 @@ local function beginContact(a, b, contact)
     local player, diamond = getTaggedCollision("player", "diamond")
     if player and diamond then
         diamond.is_dead = true
-        score = score + 5
+        if diamond.color == "yellow" then
+            score = score + 5
+        elseif diamond.color == "green" then
+            score = score + 10
+        elseif diamond.color == "blue" then
+            score = score + 25
+        else
+            print("error: diamond with invalid color:", diamond.color)
+        end
     end
 end
 
@@ -224,6 +233,8 @@ function love.load()
 
     gameMap = sti('maps/map.lua')
     gameMapRect = Rect:new(0, 0, gameMap.width * gameMap.tilewidth, gameMap.height * gameMap.tileheight)
+
+    bgcolor = gameMap.layers["Platforms"].properties.bgcolor or bgcolor
 
     local playerStates = {
         "dead",
@@ -353,7 +364,7 @@ local function displayGameOverScreen()
 end
 
 function love.draw()
-    withColor("darkslategrey", function()
+    withColor(bgcolor, function()
         love.graphics.rectangle("fill", 0, 0, WIN_WIDTH, WIN_HEIGHT)
     end)
 

@@ -7,6 +7,9 @@
   <image source="../images/tilesheet_complete.png" width="1408" height="768"/>
  </tileset>
  <layer id="7" name="Platforms" width="30" height="15">
+  <properties>
+   <property name="bgcolor" value="darkslateblue"/>
+  </properties>
   <data encoding="csv">
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,

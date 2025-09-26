@@ -4,10 +4,7 @@
 [x] display diamond rects from map positions
 [x] display diamond images loading from spritesheet using quads
 [x] let player collect diamonds, diamonds win score points
-[ ] count point values depending on diamond color
-    Y: 5 points
-    G: 10 points
-    B: 20 points
+[x] count point values depending on diamond color
 [ ] display flag
 [ ] make player win when capturing flag and arriving at the goal
 [ ] experiment with adding enemies
