@@ -13,7 +13,10 @@ lick.reset = true
 
 local function withColor(color, func, ...)
     local old_r, old_g, old_b, old_a = love.graphics.getColor()
-    love.graphics.setColor(love.math.colorFromBytes(colors.color(color)))
+    if type(color) == "string" then
+        color = colors.color(color)
+    end
+    love.graphics.setColor(love.math.colorFromBytes(color))
     func(...)
     love.graphics.setColor(old_r, old_g, old_b, old_a)
 end
@@ -40,6 +43,38 @@ function LevelFlag:update(dt) end
 
 function LevelFlag:draw()
     love.graphics.draw(self.image, self.quad, self.rect.pos.x, self.rect.pos.y)
+end
+
+Blast = {}
+
+function Blast:new(pos, radius, duration)
+    self.__index = self
+    radius = radius or 200
+    duration = duration or 0.3
+    return setmetatable({
+        pos = pos,
+        target_radius = radius,
+        color = colors.color("white"),
+        current_radius = radius * 0.05,
+        duration = duration,
+        current_time = 0,
+        is_dead = false,
+    }, self)
+end
+
+function Blast:update(dt)
+    self.current_time = self.current_time + dt
+    self.color[4] = self.color[4] - 255 / self.duration * dt
+    self.current_radius = self.current_radius + self.target_radius / self.duration * dt
+    if self.current_time >= self.duration then
+        self.is_dead = true
+    end
+end
+
+function Blast:draw()
+    withColor(self.color, function()
+        love.graphics.circle("fill", self.pos.x, self.pos.y, self.current_radius)
+    end)
 end
 
 Diamond = {}
@@ -70,6 +105,11 @@ function Diamond:update(dt) end
 
 function Diamond:draw()
     love.graphics.draw(self.image, self.quad, self.rect.pos.x, self.rect.pos.y)
+end
+
+function Diamond:kill()
+    self.is_dead = true
+    self.fixture:destroy()
 end
 
 InvisibleCollider = {}
@@ -208,7 +248,6 @@ local levelTimer = Timer:new()
 local timebomb
 local bgcolor = "darkslategrey" -- default bg color, if not defined in map
 
-
 local function beginContact(a, b, contact)
     local obj1, obj2 = a:getUserData(), b:getUserData()
 
@@ -230,12 +269,15 @@ local function beginContact(a, b, contact)
         return nil
     end
 
+    -- player collect a diamond:
     local collision = getTaggedCollision("player", "diamond")
     if collision then
-        collision.diamond.is_dead = true
+        collision.diamond:kill()
+        allSprites:add("blast", Blast:new(collision.diamond.rect:getCenter(), 150))
         score = score + 5
     end
 
+    -- player reached level goal:
     if getTaggedCollision("player", "goal") then
         score = score + 100
         gameWon = true
@@ -355,7 +397,19 @@ local function handleGameOverEvents()
     if love.keyboard.isDown("return") and (gameOver or gameWon) then
         score = 0
 
+        for diam in allSprites:groupiter("diamonds") do
+            diam:kill() -- XXX: should I standardize the kill() method?
+        end
         allSprites:cleanup()
+
+        -- TODO: consider creating a Game/Level class, refactor this load level stuff into it
+        for _, obj in ipairs(gameMap.layers["Entities"].objects) do
+            local objPos = vector(obj.x, obj.y)
+            if obj.name == "Diamond" then
+                local diam = Diamond:new(Images.tilesheet, Images.diamonds[obj.type], objPos, obj.type, world)
+                allSprites:add("diamonds", diam)
+            end
+        end
 
         player:resetInitialPos()
         gameOver = false
