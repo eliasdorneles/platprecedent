@@ -1,5 +1,19 @@
 local M = {}
 
+function shallowcopy(orig)
+    local orig_type = type(orig)
+    local copy
+    if orig_type == 'table' then
+        copy = {}
+        for orig_key, orig_value in pairs(orig) do
+            copy[orig_key] = orig_value
+        end
+    else -- number, string, boolean, etc
+        copy = orig
+    end
+    return copy
+end
+
 -- color list copied from:
 -- https://pyga.me/docs/ref/color_list.html
 -- https://github.com/pygame-community/pygame-ce/blob/main/src_py/colordict.py
@@ -686,7 +700,7 @@ function M.color(val)
     if string.sub(val, 1, 1) == '#' then
         return M.rgb(val)
     end
-    return M.named(val)
+    return shallowcopy(M.named(val))
 end
 
 return M
