@@ -9,10 +9,12 @@
 [x] make player win when arriving at the goal
 [x] add visual effect when collecting a diamond
 [x] add player animations
+[x] add funky background
+[ ] add ability to move to another level
+[ ] experiment adding obstacles in the new level
+[ ] implement parallax background
 [ ] input: make player movements playable in mobile
-[ ] experiment with adding obstacles
 [ ] experiment with adding enemies
-[ ] implement a longer next level
 
 NICE TO HAVE:
 [ ] add 3 lives: instead of game over, let the player retry a few times

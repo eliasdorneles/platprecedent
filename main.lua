@@ -99,6 +99,17 @@ local function loadImagesAndFonts()
     Images.diamonds["red"] = love.graphics.newQuad(64 * 15, 64, 64, 64, Images.tilesheet)
     Images.diamonds["green"] = love.graphics.newQuad(64 * 16, 64, 64, 64, Images.tilesheet)
 
+    Images.backgrounds = {}
+    for i = 1, 3 do
+        Images.backgrounds[i] = {}
+        Images.backgrounds[i]["bg"] = love.graphics.newImage(
+            string.format("images/backgrounds/set%d_background.png", i))
+        Images.backgrounds[i]["hills"] = love.graphics.newImage(
+            string.format("images/backgrounds/set%d_hills.png", i))
+        Images.backgrounds[i]["tiles"] = love.graphics.newImage(
+            string.format("images/backgrounds/set%d_tiles.png", i))
+    end
+
     Images.flags = {}
     Images.flags["red"] = love.graphics.newQuad(64 * 14, 64 * 8, 64, 64, Images.tilesheet)
 
@@ -271,6 +282,19 @@ function love.draw()
         displayGameWonScreen()
         return
     end
+
+    -- TODO: get background style from the map
+    -- TODO: implement horizontally infinite drawing
+    local bgImage = Images.backgrounds[2]["bg"]
+    local bgHills = Images.backgrounds[2]["hills"]
+    local bgTiles = Images.backgrounds[2]["tiles"]
+    bgTiles:setFilter("linear", "nearest")
+    bgHills:setFilter("linear", "nearest")
+    love.graphics.draw(bgImage, 0, 0, 0, 2, 2)
+    love.graphics.draw(bgTiles, 0, 0, 0, 2, 2)
+    love.graphics.draw(bgHills, 0, 0, 0, 2, 2)
+    love.graphics.draw(bgImage, bgImage:getWidth(), 0, 0, 2, 2)
+    love.graphics.draw(bgTiles, bgImage:getWidth(), 0, 0, 2, 2)
 
     camera:attach()
 
