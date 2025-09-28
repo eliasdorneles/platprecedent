@@ -8,7 +8,7 @@ function str_endswith(str, suffix)
 end
 
 function str_startswith(str, prefix)
-    local cut = string.sub(str, 1,  #prefix)
+    local cut = string.sub(str, 1, #prefix)
     return cut == prefix
 end
 
@@ -76,4 +76,18 @@ function max(list)
         if n > m then m = n end
     end
     return m
+end
+
+function shallowcopy(orig)
+    local orig_type = type(orig)
+    local copy
+    if orig_type == 'table' then
+        copy = {}
+        for orig_key, orig_value in pairs(orig) do
+            copy[orig_key] = orig_value
+        end
+    else -- number, string, boolean, etc
+        copy = orig
+    end
+    return copy
 end
