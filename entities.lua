@@ -121,7 +121,6 @@ function Player:new()
     self.__index = self
     return setmetatable({
         direction = vector(),
-        animation_speed = 10,
         tag = "player",
     }, self)
 end
@@ -181,17 +180,26 @@ function Player:move()
 end
 
 function Player:animate(dt)
+    local dx, dy = self.body:getLinearVelocity()
+
+    local is_moving_vertically = math.abs(dy) >= 0.01
     local animation_state = "walk1"
-    if self.direction.x ~= 0 or self.direction.y ~= 0 then
+    if dx ~= 0 and not is_moving_vertically then
         self.state = "walking"
+    elseif is_moving_vertically then
+        self.state = "jumping"
     else
         self.state = "idle"
         animation_state = "walk1"
     end
+
+    local animation_speed = 10
     if self.state == "walking" then
         local frames = 2
-        self.frame_index = (self.frame_index + self.animation_speed * dt) % frames
+        self.frame_index = (self.frame_index + animation_speed * dt) % frames
         animation_state = string.format("walk%d", math.floor(self.frame_index) + 1)
+    elseif self.state == "jumping" then
+        animation_state = "walk3"
     end
     self.image = self.images[animation_state]
 end

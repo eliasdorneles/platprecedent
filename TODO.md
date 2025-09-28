@@ -8,7 +8,8 @@
 [x] display flag
 [x] make player win when arriving at the goal
 [x] add visual effect when collecting a diamond
-[ ] add player animations
+[x] add player animations
+[ ] input: make player movements playable in mobile
 [ ] experiment with adding obstacles
 [ ] experiment with adding enemies
 [ ] implement a longer next level

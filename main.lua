@@ -10,6 +10,7 @@ require("drawing")
 
 -- uncomment the lines below to allow hot-reloading
 local lick = require("vendor/lick")
+lick.updateAllFiles = true
 lick.reset = true
 
 
@@ -78,18 +79,7 @@ local function startLevelTimer(timeout)
     end)
 end
 
-function love.load()
-    print('starting platformer...')
-    math.randomseed(os.time())
-
-    love.window.setTitle("Plat Précedent")
-    WIN_WIDTH, WIN_HEIGHT = love.graphics.getDimensions()
-
-    local gravity = 9.81 * 100
-    world = love.physics.newWorld(0, gravity)
-
-    world:setCallbacks(beginContact, endContact)
-
+local function loadImagesAndFonts()
     Images.big_font = love.graphics.newFont("images/04B_11.ttf", 60)
     Images.medium_font = love.graphics.newFont("images/04B_11.ttf", 20)
 
@@ -105,36 +95,36 @@ function love.load()
     Images.flags = {}
     Images.flags["red"] = love.graphics.newQuad(64 * 14, 64 * 8, 64, 64, Images.tilesheet)
 
+    local playerAnimationStates = {
+        "dead", "duck", "fall", "hit", "roll", "stand", "swim1", "swim2", "switch1", "switch2",
+        "up1", "up2", "up3", "walk1", "walk2", "walk3", "walk4", "walk5"
+    }
+    Images.playerImages = {}
+    for _, state in ipairs(playerAnimationStates) do
+        local imgPath = "images/player/playerRed_" .. state .. ".png"
+        Images.playerImages[state] = love.graphics.newImage(imgPath)
+    end
+end
+
+function love.load()
+    print('starting platformer...')
+    math.randomseed(os.time())
+
+    love.window.setTitle("Plat Précedent")
+    WIN_WIDTH, WIN_HEIGHT = love.graphics.getDimensions()
+
+    local gravity = 9.81 * 100
+    world = love.physics.newWorld(0, gravity)
+
+    world:setCallbacks(beginContact, endContact)
+
+
     gameMap = sti('maps/map.lua')
     gameMapRect = Rect:new(0, 0, gameMap.width * gameMap.tilewidth, gameMap.height * gameMap.tileheight)
 
     bgcolor = gameMap.layers["Platforms"].properties.bgcolor or bgcolor
 
-    local playerStates = {
-        "dead",
-        "duck",
-        "fall",
-        "hit",
-        "roll",
-        "stand",
-        "swim1",
-        "swim2",
-        "switch1",
-        "switch2",
-        "up1",
-        "up2",
-        "up3",
-        "walk1",
-        "walk2",
-        "walk3",
-        "walk4",
-        "walk5",
-    }
-    Images.playerImages = {}
-    for _, state in ipairs(playerStates) do
-        local imgPath = "images/player/playerRed_" .. state .. ".png"
-        Images.playerImages[state] = love.graphics.newImage(imgPath)
-    end
+    loadImagesAndFonts()
 
     for _, obj in ipairs(gameMap.layers["Collisions"].objects) do
         local wall = {}
