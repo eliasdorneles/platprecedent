@@ -317,7 +317,14 @@ function love.draw()
     end
     camera:detach()
 
-    love.graphics.printf(string.format("Score: %d", score), Images.small_font, -10, 10, WIN_WIDTH, "right")
+    if love.timer.getTime() < 5 then
+        WithColor("#ffd944", function()
+            love.graphics.printf("Use the arrow keys to move and jump", Images.small_font, 0,
+                WIN_HEIGHT / 2 - 150, WIN_WIDTH, "center")
+        end)
+    end
+
+    love.graphics.printf(string.format("Score: %d", score), Images.small_font, 10, 10, WIN_WIDTH, "left")
     local textColor = "white"
     if timeLeft < 5 then
         textColor = "red"
@@ -326,6 +333,6 @@ function love.draw()
     end
     WithColor(textColor, function()
         local text = string.format("Time left: %d", timeLeft)
-        love.graphics.printf(text, Images.small_font, 10, 10, WIN_WIDTH, "left")
+        love.graphics.printf(text, Images.small_font, -10, 10, WIN_WIDTH, "right")
     end)
 end

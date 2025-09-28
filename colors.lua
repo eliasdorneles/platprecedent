@@ -681,7 +681,7 @@ function M.rgb(val)
     local r = tonumber('0x' .. string.sub(val, 2, 3))
     local g = tonumber('0x' .. string.sub(val, 4, 5))
     local b = tonumber('0x' .. string.sub(val, 6, 7))
-    return r, g, b
+    return {r, g, b}
 end
 
 function M.color(val)
