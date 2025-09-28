@@ -1,3 +1,4 @@
+.PHONY: game.love clean
 game.love:
 	git archive --format=zip --output game.love main
 
