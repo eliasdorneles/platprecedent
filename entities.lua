@@ -179,29 +179,29 @@ function Player:move()
     self.rect:setCenter(vector(self.body:getPosition()))
 end
 
-function Player:animate(dt)
+function Player:getAnimationState()
     local dx, dy = self.body:getLinearVelocity()
-
     local is_moving_vertically = math.abs(dy) >= 0.01
-    local animation_state = "walk1"
     if dx ~= 0 and not is_moving_vertically then
-        self.state = "walking"
+        return "walking"
     elseif is_moving_vertically then
-        self.state = "jumping"
-    else
-        self.state = "idle"
-        animation_state = "walk1"
+        return "jumping"
     end
+    return "idle"
+end
 
+function Player:animate(dt)
+    self.state = self:getAnimationState()
     local animation_speed = 10
+    local frame_state = "walk1"
     if self.state == "walking" then
         local frames = 2
         self.frame_index = (self.frame_index + animation_speed * dt) % frames
-        animation_state = string.format("walk%d", math.floor(self.frame_index) + 1)
+        frame_state = string.format("walk%d", math.floor(self.frame_index) + 1)
     elseif self.state == "jumping" then
-        animation_state = "walk3"
+        frame_state = "swim2"
     end
-    self.image = self.images[animation_state]
+    self.image = self.images[frame_state]
 end
 
 function Player:update(dt)

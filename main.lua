@@ -95,12 +95,12 @@ local function loadImagesAndFonts()
     Images.flags = {}
     Images.flags["red"] = love.graphics.newQuad(64 * 14, 64 * 8, 64, 64, Images.tilesheet)
 
-    local playerAnimationStates = {
+    local playerFrameStates = {
         "dead", "duck", "fall", "hit", "roll", "stand", "swim1", "swim2", "switch1", "switch2",
         "up1", "up2", "up3", "walk1", "walk2", "walk3", "walk4", "walk5"
     }
     Images.playerImages = {}
-    for _, state in ipairs(playerAnimationStates) do
+    for _, state in ipairs(playerFrameStates) do
         local imgPath = "images/player/playerRed_" .. state .. ".png"
         Images.playerImages[state] = love.graphics.newImage(imgPath)
     end
