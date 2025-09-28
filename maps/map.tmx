@@ -87,7 +87,7 @@
   <object id="41" name="Flag" type="red" x="1827" y="256">
    <point/>
   </object>
-  <object id="44" name="Goal" x="1856" y="64" width="364" height="256.667"/>
+  <object id="44" name="Goal" x="1889.33" y="63.3333" width="364" height="256.667"/>
  </objectgroup>
  <objectgroup id="8" name="Collisions">
   <object id="4" x="-64" y="-64" width="64" height="1024"/>
