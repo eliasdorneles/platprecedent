@@ -85,10 +85,10 @@ local function startLevelTimer(timeout)
 end
 
 local function loadImagesAndFonts()
-    Images.huge_font = love.graphics.newFont("images/Scabber-q2Mn0.ttf", 60)
-    Images.big_font = love.graphics.newFont("images/Scabber-q2Mn0.ttf", 40)
-    Images.medium_font = love.graphics.newFont("images/Scabber-q2Mn0.ttf", 20)
-    Images.small_font = love.graphics.newFont("images/Scabber-q2Mn0.ttf", 14)
+    Images.huge_font = love.graphics.newFont("images/Scabber-q2Mn0.ttf", 80)
+    Images.big_font = love.graphics.newFont("images/Scabber-q2Mn0.ttf", 50)
+    Images.medium_font = love.graphics.newFont("images/Scabber-q2Mn0.ttf", 30)
+    Images.small_font = love.graphics.newFont("images/Scabber-q2Mn0.ttf", 20)
 
     Images.tilesheet = love.graphics.newImage("images/tilesheet_complete.png")
 
@@ -245,22 +245,22 @@ end
 local function displayGameOverScreen()
     WithColor("antiquewhite", function()
         love.graphics.printf(
-            "GAME OVER", Images.huge_font, 0, WIN_HEIGHT / 2 - 120, WIN_WIDTH, "center")
+            "GAME OVER", Images.huge_font, 0, WIN_HEIGHT / 2 - 150, WIN_WIDTH, "center")
         love.graphics.printf(
             string.format("Your score: %d", score), Images.big_font, 0, WIN_HEIGHT / 2, WIN_WIDTH, "center")
         love.graphics.printf(
-            "Press ENTER to play again", Images.medium_font, 0, WIN_HEIGHT / 2 + 150, WIN_WIDTH, "center")
+            "Press ENTER to play again", Images.medium_font, 0, WIN_HEIGHT / 2 + 120, WIN_WIDTH, "center")
     end)
 end
 
 local function displayGameWonScreen()
     WithColor("antiquewhite", function()
         love.graphics.printf(
-            "YOU WON!", Images.huge_font, 0, WIN_HEIGHT / 2 - 120, WIN_WIDTH, "center")
+            "YOU WON!", Images.huge_font, 0, WIN_HEIGHT / 2 - 150, WIN_WIDTH, "center")
         love.graphics.printf(
             string.format("Your score: %d", score), Images.big_font, 0, WIN_HEIGHT / 2, WIN_WIDTH, "center")
         love.graphics.printf(
-            "Press ENTER to continue", Images.medium_font, 0, WIN_HEIGHT / 2 + 150, WIN_WIDTH, "center")
+            "Press ENTER to continue", Images.medium_font, 0, WIN_HEIGHT / 2 + 120, WIN_WIDTH, "center")
     end)
 end
 
@@ -317,15 +317,15 @@ function love.draw()
     end
     camera:detach()
 
-    love.graphics.printf(string.format("Score: %d", score), Images.small_font, -10, 30, WIN_WIDTH, "right")
+    love.graphics.printf(string.format("Score: %d", score), Images.small_font, -10, 10, WIN_WIDTH, "right")
     local textColor = "white"
-    if timeLeft < 15 then
-        textColor = "orange"
-    elseif timeLeft < 5 then
+    if timeLeft < 5 then
         textColor = "red"
+    elseif timeLeft < 15 then
+        textColor = "orange"
     end
     WithColor(textColor, function()
         local text = string.format("Time left: %d", timeLeft)
-        love.graphics.printf(text, Images.small_font, -10, 10, WIN_WIDTH, "right")
+        love.graphics.printf(text, Images.small_font, 10, 10, WIN_WIDTH, "left")
     end)
 end
