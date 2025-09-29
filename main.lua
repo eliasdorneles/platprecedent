@@ -264,6 +264,36 @@ local function displayGameWonScreen()
     end)
 end
 
+TouchEvents = {
+    begin_x = nil,
+    end_x = nil,
+    doingTouch = false,
+    last = nil,
+}
+
+function love.touchpressed(id, x, y, dx, dy, pressure)
+    if TouchEvents.doingTouch == false then
+        TouchEvents.begin_x = x
+        TouchEvents.doingTouch = true
+    end
+end
+
+function love.touchreleased(id, x, y, dx, dy, pressure)
+    TouchEvents.end_x = x
+    if TouchEvents.doingTouch then
+        if TouchEvents.end_x < TouchEvents.begin_x then
+            TouchEvents.last = "SWIPE_RIGHT"
+        elseif TouchEvents.end_x > TouchEvents.begin_x then
+            TouchEvents.last = "SWIPE_LEFT"
+        elseif TouchEvents.end_x == TouchEvents.begin_x then
+            TouchEvents.last = "TOUCH"
+        end
+        TouchEvents.begin_x = nil
+        TouchEvents.end_x = nil
+        TouchEvents.doingTouch = false
+    end
+end
+
 function love.draw()
     local background = bgcolor
     if gameOver then
