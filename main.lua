@@ -137,7 +137,7 @@ function love.load()
     world:setCallbacks(beginContact, endContact)
 
 
-    gameMap = sti('maps/map.lua')
+    gameMap = sti('maps/map01.lua')
     gameMapRect = Rect:new(0, 0, gameMap.width * gameMap.tilewidth, gameMap.height * gameMap.tileheight)
 
     bgcolor = gameMap.layers["Platforms"].properties.bgcolor or bgcolor

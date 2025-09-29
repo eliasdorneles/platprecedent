@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="30" height="15" tilewidth="64" tileheight="64" infinite="0" nextlayerid="9" nextobjectid="53">
  <editorsettings>
-  <export target="map.lua" format="lua"/>
+  <export target="map01.lua" format="lua"/>
  </editorsettings>
  <tileset firstgid="1" name="abstrat_platformer_tileset" tilewidth="64" tileheight="64" tilecount="264" columns="22">
   <image source="../images/tilesheet_complete.png" width="1408" height="768"/>
