@@ -10,6 +10,9 @@
 [x] add visual effect when collecting a diamond
 [x] add player animations
 [x] add funky background
+[x] make the game playable from mobile devices using touch events
+[ ] bug: prevent player from still being able to jump after leaving a platform (how??)
+[ ] refactor: cleanup TouchEvents, create a wrapper class, remove unneeded code
 [ ] add ability to move to another level
 [ ] experiment adding obstacles in the new level
 [ ] implement parallax background

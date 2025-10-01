@@ -141,6 +141,10 @@ function Player:init(images, world, initialPos)
     self.body:setFixedRotation(true)
     self.fixture:setUserData(self)
     self.direction = vector()
+    self.singleTouch = false
+    self.swipeDirection = nil
+    self.grounded = false
+    self.speed_x = 300
     self:resetInitialPos()
 end
 
@@ -149,22 +153,30 @@ function Player:resetInitialPos()
     self.rect:setCenter(vector(self.body:getPosition()))
 end
 
-function Player:isOnFloor()
-    -- TODO: how to check player is on floor reliably?
-    local _, dy = self.body:getLinearVelocity()
-    return dy == 0
+function Player:registerSingleTouch(touched)
+    self.singleTouch = touched
 end
 
 function Player:input()
     self.direction = vector()
-    if love.keyboard.isDown("up") and self:isOnFloor() then
-        self.direction.y = -1
+
+    local playerUp = love.keyboard.isDown("up") or self.singleTouch
+    if self.singleTouch then
+        -- we reset the variable just after using it to ensure we only process a touch once
+        self.singleTouch = false
     end
-    if love.keyboard.isDown("left") then
+    local playerLeft = love.keyboard.isDown("left") or self.swipeDirection == "left"
+    local playerRight = love.keyboard.isDown("right") or self.swipeDirection == "right"
+
+    if playerUp and self.grounded then
+        self.direction.y = -1
+        self.grounded = false
+    end
+    if playerLeft then
         self.direction.x = -1
         self.facing = "left"
     end
-    if love.keyboard.isDown("right") then
+    if playerRight then
         self.direction.x = 1
         self.facing = "right"
     end
@@ -173,7 +185,7 @@ end
 
 function Player:move()
     local _, dy = self.body:getLinearVelocity()
-    local dx = self.direction.x * 300
+    local dx = self.direction.x * self.speed_x
     dy = dy + self.direction.y * 600
     self.body:setLinearVelocity(dx, dy)
     self.rect:setCenter(vector(self.body:getPosition()))
@@ -188,6 +200,22 @@ function Player:getAnimationState()
         return "jumping"
     end
     return "idle"
+end
+
+function Player:beginContact(a, b, contact)
+    if self.grounded then return end
+    if contact == nil then return end
+    local nx, ny = contact:getNormal()
+    -- ny -1 if a is on top of b, or 1 if b is on top of a
+    if a == self.fixture then
+        if ny > 0 then
+            self.grounded = true
+        end
+    else
+        if ny < 0 then
+            self.grounded = true
+        end
+    end
 end
 
 function Player:animate(dt)

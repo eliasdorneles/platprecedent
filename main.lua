@@ -52,6 +52,13 @@ local function beginContact(a, b, contact)
         return nil
     end
 
+    if a == player.fixture then
+        player:beginContact(a, b, contact)
+    end
+    if b == player.fixture then
+        player:beginContact(a, b, contact)
+    end
+
     -- player collect a diamond:
     local collision = getTaggedCollision("player", "diamond")
     if collision then
@@ -125,6 +132,14 @@ local function loadImagesAndFonts()
 end
 
 function love.load()
+    -- messages = ""
+    TouchEvents = {
+        prefer = false,
+        begin_x = nil,
+        end_x = nil,
+        doingTouch = false,
+        last = nil,
+    }
     print('starting platformer...')
     math.randomseed(os.time())
 
@@ -176,6 +191,41 @@ function love.load()
     startLevelTimer(levelTimerLimit)
 end
 
+function love.touchpressed(id, x, y, dx, dy, pressure)
+    player.speed_x = 400 -- if user is using touch events, increase player horizontal speed
+    if TouchEvents.doingTouch == false then
+        TouchEvents.begin_x = x
+        TouchEvents.doingTouch = true
+    end
+end
+
+function love.touchreleased(id, x, y, dx, dy, pressure)
+    TouchEvents.end_x = x
+    if TouchEvents.doingTouch then
+        local diff_x = TouchEvents.end_x - TouchEvents.begin_x
+        if diff_x < -3 then
+            TouchEvents.last = "SWIPE_LEFT"
+        elseif diff_x > 3 then
+            TouchEvents.last = "SWIPE_RIGHT"
+        else
+            TouchEvents.last = "TOUCH"
+            player:registerSingleTouch(true)
+        end
+        TouchEvents.begin_x = nil
+        TouchEvents.end_x = nil
+        TouchEvents.doingTouch = false
+    end
+    player.swipeDirection = nil
+end
+
+function love.touchmoved(id, x, y, dx, dy, pressure)
+    if dx < -3 then
+        player.swipeDirection = "left"
+    elseif dx > 3 then
+        player.swipeDirection = "right"
+    end
+end
+
 function love.keyreleased(key)
     if key == "f8" then
         debugMode = not debugMode
@@ -183,7 +233,8 @@ function love.keyreleased(key)
 end
 
 local function handleGameOverEvents()
-    if love.keyboard.isDown("return") and (gameOver or gameWon) then
+    local playAgain = love.keyboard.isDown("return") or TouchEvents.last == "TOUCH"
+    if playAgain and (gameOver or gameWon) then
         score = 0
 
         for diam in allSprites:groupiter("diamonds") do
@@ -264,36 +315,6 @@ local function displayGameWonScreen()
     end)
 end
 
-TouchEvents = {
-    begin_x = nil,
-    end_x = nil,
-    doingTouch = false,
-    last = nil,
-}
-
-function love.touchpressed(id, x, y, dx, dy, pressure)
-    if TouchEvents.doingTouch == false then
-        TouchEvents.begin_x = x
-        TouchEvents.doingTouch = true
-    end
-end
-
-function love.touchreleased(id, x, y, dx, dy, pressure)
-    TouchEvents.end_x = x
-    if TouchEvents.doingTouch then
-        if TouchEvents.end_x < TouchEvents.begin_x then
-            TouchEvents.last = "SWIPE_RIGHT"
-        elseif TouchEvents.end_x > TouchEvents.begin_x then
-            TouchEvents.last = "SWIPE_LEFT"
-        elseif TouchEvents.end_x == TouchEvents.begin_x then
-            TouchEvents.last = "TOUCH"
-        end
-        TouchEvents.begin_x = nil
-        TouchEvents.end_x = nil
-        TouchEvents.doingTouch = false
-    end
-end
-
 function love.draw()
     local background = bgcolor
     if gameOver then
@@ -325,6 +346,8 @@ function love.draw()
     love.graphics.draw(bgHills, 0, 0, 0, 2, 2)
     love.graphics.draw(bgImage, bgImage:getWidth(), 0, 0, 2, 2)
     love.graphics.draw(bgTiles, bgImage:getWidth(), 0, 0, 2, 2)
+
+    -- love.graphics.printf("Mesg: " .. messages, 10, 50, 600, "left")
 
     camera:attach()
 
